@@ -42,13 +42,8 @@ int sasselfeldCriterion(float **matH, int nlines, int mcols){
     {
         for (int j = 0; j < mcols; j++)
         {
-            if(i == 0){
-                beta[i] += matH[i][j];
-            }else{
-                aux += matH[i][j]*beta[i];
-            }
+            beta[i] += matH[i][j]*beta[j];
         }
-        beta[i] = aux;
     }
 
     for(int i = 0; i < nlines; i++){
@@ -67,17 +62,18 @@ int sasselfeldCriterion(float **matH, int nlines, int mcols){
     return 0;
 }
 
-bool errorVerification(float *vet1, float *vet2, int size, float erro){
+bool errorVerification(float *vet1, float *vet2, int nlines, float erro){
     float maior = 0;
-    float teste[size];
+    float teste[nlines];
 
-    for(int i = 0; i < size-1; i++)
+    for(int i = 0; i < nlines; i++)
     {
         printf("\n%.3f - %.3f/ %.3f\n", vet2[i], vet1[i], vet2[i]);
         teste[i] = fabs(vet2[i] - vet1[i])/fabs(vet2[i]);
     }
 
-    for (int i = 0; i < size; i++)
+
+    for (int i = 0; i < nlines; i++)
     {
         if (i == 0) 
         {
@@ -92,19 +88,47 @@ bool errorVerification(float *vet1, float *vet2, int size, float erro){
 
     if(maior < erro)
     {
+        printf("\nPrecisao minima atingida\n");
         return false;
     }
 
     return true;
 }
 
-void gaussSeidel(float **matH2, float **matH, float **mat, int nlines, int mcols, float erro, int max_it, float *pivos){
+void gaussSeidel(float **matH, float **mat, int nlines, int mcols, float erro, int max_it, float *pivos){
     int debug = 0, k = 0;
     float result[mcols], result2[mcols], vetAux[mcols];
     bool flag;
 
     printf("Para modo de Debug digite 1, para apenas ver os resultados sem os passos digite 0: ");
     scanf("%d", &debug);
+
+    // calcula matriz H
+    for (int i = 0; i < nlines; i++)
+    {
+        for (int j = 0; j < mcols; j++)
+        {
+            if(i == j){
+                matH[i][j] = 0;
+                continue;
+            }
+
+            if(j == mcols-1){
+                matH[i][j] = mat[i][j]/pivos[i];
+                continue;
+            }
+
+            if(j != mcols-1){
+                matH[i][j] = (-1 * mat[i][j])/pivos[i];
+                continue;
+            }
+        }
+    }
+
+    printf("\nSua matriz H: ------------------------------------------------------\n");
+    printMatriz(matH, nlines, mcols);
+    printf("------------------------------------------------------\n");
+    
 
     //testando criterio de sassenfeld
     if(sasselfeldCriterion(matH, nlines, mcols)){
@@ -127,43 +151,7 @@ void gaussSeidel(float **matH2, float **matH, float **mat, int nlines, int mcols
         result2[i] = 0;
         vetAux[i] = 0;
     }
-
-    // matriz H recebe os valores da matriz base
-    for (int i = 0; i < nlines; i++)
-    {
-        for (int j = 0; j < mcols; j++)
-        {
-            matH[i][j] = mat[i][j];
-        }
-    }
-
-    // calcula matriz H
-    for (int i = 0; i < nlines; i++)
-    {
-        for (int j = 0; j < mcols; j++)
-        {
-            if(i == j){
-                matH2[i][j] = 0;
-                continue;
-            }
-
-            if(j == mcols-1){
-                matH2[i][j] = matH[i][j]/pivos[i];
-                continue;
-            }
-
-            if(j != mcols-1){
-                matH2[i][j] = (-1 * matH[i][j])/pivos[i];
-                continue;
-            }
-        }
-    }
-
-    if(debug == 1){
-        printf("\nSua matriz H: ------------------------------------------------------\n");
-        printMatriz(matH2, nlines, mcols);
-        printf("------------------------------------------------------\n");
-    }
+    
 
     //iniciar iteracoes---------------------------------------------------------
     float teste[mcols];
@@ -173,55 +161,100 @@ void gaussSeidel(float **matH2, float **matH, float **mat, int nlines, int mcols
         {
             for(int j = 0; j < mcols; j++)
             {
-                result2[i] += matH2[i][j] * vetAux[j];
+                vetAux[i] += matH[i][j] * result2[j];
             }
 
-            result[i] = vetAux[i];
-            vetAux[i] = result2[i];
-            result2[i] = 0;
+            result[i] = result2[i];
+            result2[i] = vetAux[i];
+            vetAux[i] = 0;
         }
 
-        if(debug == 1){
-            printf("\n------------------------Iteracao %d: --------------------------\n", k+1);
-            for (int i = 0; i < mcols-1; i++)
+        if(debug){
+            printf("\n------------------------ Iteracao %d: --------------------------\n", k+1);
+            for (int i = 0; i < nlines; i++)
             {
-                printf("x(%d): %.3f\n", i+1, vetAux[i]);
+                printf("x(%d): %.3f\n", i+1, result2[i]);
             }
             printf("\n--------------------------------------------------------------\n");
         }
 
         k++;
 
-        flag = errorVerification(result, vetAux, mcols, erro);
-
-        for (int i = 0; i < mcols-1; i++)
-            result[i] = result2[i];
+        flag = errorVerification(result, result2, nlines, erro);
         
     }while(flag == true && k < max_it-1);
 
     printf("\n----------------------------------------------\n");
     printf("A solucao apromixada para este sistema é: ");
-    for (int i = 0; i < mcols-1; i++)
+    for (int i = 0; i < nlines; i++)
     {
-        printf("\nX(%d): %.3f ", i+1, vetAux[i]);
+        printf("\nX(%d): %.5f ", i+1, result2[i]);
     }
     printf("\n----------------------------------------------\n");
 }
 
 //TODO
-void jacobiRichardson(float **matH2, float **matH, float **mat, int nlines, int mcols, float erro, int max_it, float *pivos)
+void jacobiRichardson(float **matH, float **mat, int nlines, int mcols, float erro, int max_it, float *pivos)
 {
 
 }
 
-void strictlyDominantDiagonal(float **mat, float *pivos)
+void strictlyDominantDiagonal(float **mat, int nlines, int mcols, float *pivos)
 {
+    float soma[nlines];
 
+    for(int i = 0; i < nlines; i++)
+    {
+        for(int j = 0; j < mcols; j++)
+        {
+            if(i != j && j != mcols-1)
+            {
+                soma[i] += fabs(mat[i][j]);
+            }
+        }
+
+        if(soma[i] < pivos[i])
+        {
+            printf("\nA matriz NAO e estritamente diagonal dominante\n");
+            return;
+        }
+    }
+    
+    printf("\nA matriz e SIM estritamente diagonal dominante\n");
 }
 
-void stantardLine(float **mat)
+void stantardLine(float **mat, int nlines, int mcols)
 {
+    int k = 0;
+    float soma[nlines], maior = 0;
 
+    for(int i = 0; i < nlines; i++)
+    {
+        for(int j = 0; j < mcols; j++)
+        {
+            if(i != j && j != mcols-1)
+            {
+                soma[i] += fabs(mat[i][j]);
+            }
+        }
+    }
+
+    for(int i = 0; i < nlines; i++)
+    {
+        if(i == 0)
+        {
+            maior = soma[i];
+            k = i;
+        }
+
+        if(soma[i] > maior)
+        {
+            maior = soma[i];
+            k = i;
+        }
+    }
+
+    printf("\nA %dº e a norma-linha\n", k);
 }
 
 
@@ -230,17 +263,37 @@ int main()
     float **mat, aux, maior, erro;
     int nlines, mcols, max_it, k = 0;
     int choice;
-    bool flag;
+    bool flag = true;
 
-    printf("------------------------------------ Considere que voce esta criando uma matriz aumentada ------------------------------------\n");
-    printf("Insira a quantidade de linhas da matriz: ");
-    scanf("%d", &nlines);
-    printf("Insira a quantidade de colunas da matriz: ");
-    scanf("%d", &mcols);
-    printf("Insira a quantidade máxima de iteracoes que deseja calcular: ");
-    scanf("%d", &max_it);
-    printf("Insira o erro maximo: ");
-    scanf("%f", &erro);
+    while (flag == true)
+    {
+        printf("------------------------------------ Considere que voce esta criando uma matriz aumentada ------------------------------------\n");
+        printf("Insira a quantidade de linhas da matriz: ");
+        scanf("%d", &nlines);
+        printf("Insira a quantidade de colunas da matriz: ");
+        scanf("%d", &mcols);
+
+        if(mcols - nlines != 1)
+        {
+            printf("\nA matriz precisa ser quadrada\n");
+            continue;
+        }
+
+        printf("Insira a quantidade máxima de iteracoes que deseja calcular: ");
+        scanf("%d", &max_it);
+
+        if(max_it < 1)
+        {
+            printf("\nInsira 1 ou mais iteracoes\n");
+            continue;
+        }
+
+        printf("Insira o erro maximo: ");
+        scanf("%f", &erro);
+
+        flag = false;
+    }
+    
 
     //alocando pointeiros do tipo float para cada posicao do vetor
     mat = malloc(nlines * sizeof (float*));
@@ -251,7 +304,7 @@ int main()
         mat[i] = malloc(mcols * sizeof(float));
     }
 
-    float pivos[nlines - 1];
+    float pivos[nlines];
 
     //iniciando a matriz com zeros para evitar erros de lixo de memória
     for(int i = 0; i < nlines; i++)
@@ -278,14 +331,18 @@ int main()
 
             if(i == j)
             {
+                if(mat[i][j] == 0)
+                {
+                    printf("\nA diagonal principal nao pode ser nula\n");
+                    freeMatriz(mat, nlines);
+                    return 1;
+                }
                 pivos[i] = mat[i][j];
             }
         }
     }
 
     printf("\n------------------------------------------------------------------------\n");
-
-    
 
     do{
         printf("\n------------------------------------ MENU ------------------------------------\n");
@@ -297,37 +354,30 @@ int main()
         scanf("%d", &choice);
         printf("------------------------------------------------------------------------\n");
 
-        float **matH, **matH2, result[mcols], result2[mcols], vetAux[mcols];
+        float **matH, result[mcols], result2[mcols], vetAux[mcols];
         matH = malloc(nlines * sizeof(float *));
         for(int i = 0; i < nlines; i++)
         {
             matH[i] = malloc(mcols * sizeof(float));
         }
 
-        matH2 = malloc(nlines * sizeof(float *));
-        for(int i = 0; i < nlines; i++)
-        {
-            matH2[i] = malloc(mcols * sizeof(float));
-        }
-
         switch (choice)
         {
             case 1:
-                gaussSeidel(matH2, matH, mat, nlines, mcols, erro, max_it, pivos);
+                gaussSeidel(matH, mat, nlines, mcols, erro, max_it, pivos);
                 break;
             case 2:
-                jacobiRichardson(matH2, matH, mat, nlines, mcols, erro, max_it, pivos);
+                jacobiRichardson(matH, mat, nlines, mcols, erro, max_it, pivos);
                 break;
             case 3:
-                stantardLine(mat);
+                stantardLine(mat, nlines, mcols);
                 break;
             case 4:
-                strictlyDominantDiagonal(mat, pivos);
+                strictlyDominantDiagonal(mat, nlines, mcols, pivos);
                 break;
             case 0:
                 freeMatriz(mat, nlines);
                 freeMatriz(matH, nlines);
-                freeMatriz(matH2, nlines);
                 break;
             default:
                 break;
