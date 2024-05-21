@@ -261,8 +261,7 @@ void stantardLine(float **mat, int nlines, int mcols)
 int main()
 {
     float **mat, aux, maior, erro;
-    int nlines, mcols, max_it, k = 0;
-    int choice;
+    int nlines, mcols, max_it, k = 0, choice;
     bool flag = true;
 
     while (flag == true)
