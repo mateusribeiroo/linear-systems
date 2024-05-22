@@ -68,7 +68,6 @@ bool errorVerification(float *vet1, float *vet2, int nlines, float erro){
 
     for(int i = 0; i < nlines; i++)
     {
-        printf("\n%.3f - %.3f/ %.3f\n", vet2[i], vet1[i], vet2[i]);
         teste[i] = fabs(vet2[i] - vet1[i])/fabs(vet2[i]);
     }
 
@@ -102,33 +101,6 @@ void gaussSeidel(float **matH, float **mat, int nlines, int mcols, float erro, i
 
     printf("Para modo de Debug digite 1, para apenas ver os resultados sem os passos digite 0: ");
     scanf("%d", &debug);
-
-    // calcula matriz H
-    for (int i = 0; i < nlines; i++)
-    {
-        for (int j = 0; j < mcols; j++)
-        {
-            if(i == j){
-                matH[i][j] = 0;
-                continue;
-            }
-
-            if(j == mcols-1){
-                matH[i][j] = mat[i][j]/pivos[i];
-                continue;
-            }
-
-            if(j != mcols-1){
-                matH[i][j] = (-1 * mat[i][j])/pivos[i];
-                continue;
-            }
-        }
-    }
-
-    printf("\nSua matriz H: ------------------------------------------------------\n");
-    printMatriz(matH, nlines, mcols);
-    printf("------------------------------------------------------\n");
-    
 
     //testando criterio de sassenfeld
     if(sasselfeldCriterion(matH, nlines, mcols)){
@@ -193,10 +165,70 @@ void gaussSeidel(float **matH, float **mat, int nlines, int mcols, float erro, i
     printf("\n----------------------------------------------\n");
 }
 
-//TODO
+bool linesCriterion(float **mat, int nlines, int mcols)
+{
+  return true;
+}
+
 void jacobiRichardson(float **matH, float **mat, int nlines, int mcols, float erro, int max_it, float *pivos)
 {
+    bool flag = true;
+    if(linesCriterion(mat, nlines, mcols) != true)  
+    {
+        printf("A matriz NAO obedece ao criterio das linhas");
+        return;
+    }
 
+    float result2[mcols], result[mcols], vetAux[mcols];
+    
+    //Criando vetores de resultados
+    for(int i = 0; i < mcols; i++)
+    {
+        if(i == mcols-1)
+        {
+            result[i] = 1;
+            result2[i] = 1;
+            vetAux[i] = 1;
+            continue;
+        }
+
+        result[i] = 0;
+        result2[i] = 0;
+        vetAux[i] = 0;
+    }
+
+    // iniciando iteracoes
+
+    int k = 0;
+    do {
+        for (int i = 0; i < nlines; i++) 
+        {
+            for (int j = 0; j < mcols; j++) 
+            {
+                vetAux[i] += matH[i][j] * result[j];
+            }
+
+            result2[i] = vetAux[i];
+            vetAux[i] = 0;
+        }
+
+        flag = errorVerification(result2, result, nlines, erro);
+
+        for(int i = 0; i < nlines; i++)
+        {
+           result[i] = result2[i];
+        }
+
+        k++;
+    }while (flag == true && k < max_it-1);
+
+    printf("A solucao por Jacobi-Richardson: ");
+    for(int i = 0; i < nlines; i++)
+    {
+        printf("\nX(%d): %.5f", i+1, result2[i]);
+    }
+    
+    return;
 }
 
 void strictlyDominantDiagonal(float **mat, int nlines, int mcols, float *pivos)
@@ -359,6 +391,32 @@ int main()
         {
             matH[i] = malloc(mcols * sizeof(float));
         }
+
+        // calcula matriz H
+        for (int i = 0; i < nlines; i++)
+        {
+            for (int j = 0; j < mcols; j++)
+            {
+                if(i == j){
+                    matH[i][j] = 0;
+                    continue;
+                }
+
+                if(j == mcols-1){
+                    matH[i][j] = mat[i][j]/pivos[i];
+                    continue;
+                }
+
+                if(j != mcols-1){
+                    matH[i][j] = (-1 * mat[i][j])/pivos[i];
+                    continue;
+                }
+            }
+        }
+
+        printf("\nSua matriz H: ------------------------------------------------------\n");
+        printMatriz(matH, nlines, mcols);
+        printf("------------------------------------------------------\n");
 
         switch (choice)
         {
