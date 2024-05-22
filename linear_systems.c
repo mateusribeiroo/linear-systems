@@ -2,7 +2,7 @@
 #include<stdlib.h>
 #include<math.h>
 #include <stdbool.h>
-//#include<inttypes>
+//#include<stdint.h>
 
 void freeMatriz(float **mat, int nlines)
 {
@@ -30,7 +30,7 @@ void printMatriz(float **mat, int nlines, int mcols)
 }
 
 //TODO Fazer testes nessa funcao
-int sasselfeldCriterion(float **matH, int nlines, int mcols){
+bool sasselfeldCriterion(float **matH, int nlines, int mcols){
     float aux = 0, maior = 0;
     float beta[nlines];
 
@@ -56,10 +56,10 @@ int sasselfeldCriterion(float **matH, int nlines, int mcols){
     }
 
     if(maior > 1){
-        return 1;
+        return true;
     }
 
-    return 0;
+    return false;
 }
 
 bool errorVerification(float *vet1, float *vet2, int nlines, float erro){
@@ -103,7 +103,7 @@ void gaussSeidel(float **matH, float **mat, int nlines, int mcols, float erro, i
     scanf("%d", &debug);
 
     //testando criterio de sassenfeld
-    if(sasselfeldCriterion(matH, nlines, mcols)){
+    if(sasselfeldCriterion(matH, nlines, mcols) == true){
         printf("Pelo critério de Sasselfeld o método de Gauss-Seidel não convergirá para esta matriz\n");
         return;
     }
@@ -212,7 +212,7 @@ void jacobiRichardson(float **matH, float **mat, int nlines, int mcols, float er
             vetAux[i] = 0;
         }
 
-        flag = errorVerification(result2, result, nlines, erro);
+        flag = errorVerification(result, result2, nlines, erro);
 
         for(int i = 0; i < nlines; i++)
         {
