@@ -381,6 +381,7 @@ int main()
         printf("Digite 2 para usar o método de Jacobi Richardson\n");
         printf("Digite 3 para ver a norma linha da sua matriz\n");
         printf("Digite 4 para descobrir se sua matriz é estritamente diagonal dominante\n");
+        printf("Digite 5 para ver sua matriz H\n");
         printf("Digite 0 para sair do programa\n");
         scanf("%d", &choice);
         printf("------------------------------------------------------------------------\n");
@@ -414,10 +415,6 @@ int main()
             }
         }
 
-        printf("\nSua matriz H: ------------------------------------------------------\n");
-        printMatriz(matH, nlines, mcols);
-        printf("------------------------------------------------------\n");
-
         switch (choice)
         {
             case 1:
@@ -431,6 +428,9 @@ int main()
                 break;
             case 4:
                 strictlyDominantDiagonal(mat, nlines, mcols, pivos);
+                break;
+            case 5:
+                printMatriz(matH, nlines, mcols);
                 break;
             case 0:
                 freeMatriz(mat, nlines);
